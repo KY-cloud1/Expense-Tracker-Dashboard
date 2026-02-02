@@ -9,12 +9,12 @@ import { Card } from '../models/card';
 })
 export class UserSpendingDataService {
 
-  private dataUrl = 'assets/db.json';
+  private baseUrl = 'http://localhost:3000/userSpending';
 
   constructor(private http: HttpClient) { }
 
-  getUserSpending(): Observable<UserSpending> {
-    return this.http.get<any>(this.dataUrl).pipe(
+  getUserSpendingSummary(): Observable<UserSpending> {
+    return this.http.get<any>(this.baseUrl).pipe(
       map(data => {
         interface CardData {
           name: string;

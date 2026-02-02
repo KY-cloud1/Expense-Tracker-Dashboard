@@ -20,7 +20,7 @@ export class UserDashboardComponent implements OnInit {
     private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
-    this.userSpendingDataService.getUserSpending().subscribe({
+    this.userSpendingDataService.getUserSpendingSummary().subscribe({
       next: data => {
         this.userSpending = data;
         this.cdr.detectChanges();  // Force template to update.
