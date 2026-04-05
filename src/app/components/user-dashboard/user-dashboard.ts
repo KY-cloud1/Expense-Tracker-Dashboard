@@ -104,8 +104,10 @@ export class UserDashboardComponent implements OnInit {
       }
     };
 
+    const newTotalYtd = this.userSpending.spending_ytd + spendDelta;
+
     this.userSpendingDataService
-      .updateCardSpending(updatedCards)
+      .updateCardSpending(updatedCards, newTotalYtd)
       .subscribe({
         next: updatedValue => {
           this.userSpending = updatedValue;
@@ -169,7 +171,7 @@ export class UserDashboardComponent implements OnInit {
     };
 
     this.userSpendingDataService
-      .updateCardSpending(updatedCards)
+      .payCard(updatedCards)
       .subscribe({
         next: updatedValue => {
           this.userSpending = updatedValue;

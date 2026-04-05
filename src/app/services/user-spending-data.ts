@@ -13,83 +13,49 @@ export class UserSpendingDataService {
 
   constructor(private http: HttpClient) { }
 
+  private mapToUserSpending(data: any): UserSpending {
+    const cardsDict: Record<string, Card> = {};
+    Object.entries(data.cards).forEach(([key, card_data]: [string, any]) => {
+      if (card_data && 'name' in card_data && 'spending' in card_data) {
+        cardsDict[key] = new Card(key, card_data.name, card_data.spending, card_data.limit, card_data.imageUrl);
+      }
+    });
+
+    const miscSpendYtd = data.misc_spending_ytd ?? 0;
+    const totalSpendYtd = data.total_spending_ytd ?? 0;
+    const avgMonthlySpend = totalSpendYtd / (new Date().getMonth() + 1);
+
+    return new UserSpending(totalSpendYtd, avgMonthlySpend, miscSpendYtd, cardsDict);
+  }
+
   getUserSpendingSummary(): Observable<UserSpending> {
     return this.http.get<any>(this.baseUrl).pipe(
-      map(data => {
-        // Use interface to ensure no unknown objects.
-        interface CardData {
-          name: string;
-          spending: number;
-          limit: number;
-          imageUrl: string;
-        }
-
-        let totalCardSpendYtd = 0;
-
-        // Convert the 'cards' objects into an array of Card instances safely.
-        const cardsArray: Card[] = Object.entries(data.cards)
-          .filter((entry): entry is [string, CardData] => {
-            const [key, card_data] = entry;
-            return (
-              typeof card_data === 'object' &&
-              card_data !== null &&
-              'name' in card_data &&
-              'spending' in card_data
-            );
-          })
-          .map(([key, card_data]) => {
-            totalCardSpendYtd += card_data.spending;
-
-            return new Card(
-              key,
-              card_data.name,
-              card_data.spending,
-              card_data.limit,
-              card_data.imageUrl
-            );
-          });
-
-        // Convert cardsArray to dictionary.
-        const cardsDict: Record<string, Card> = {};
-        cardsArray.forEach(card => {
-          cardsDict[card.key] = card;
-        });
-
-        const miscSpend = data.misc_spending
-        const totalSpendYtd = totalCardSpendYtd + miscSpend
-
-        // Calculate monthly spend based on the current month.
-        const currDate = new Date();
-        const currMonthIndex = currDate.getMonth();
-        const monthlySpend = totalSpendYtd / (currMonthIndex + 1)
-
-        return new UserSpending(
-          totalSpendYtd,
-          monthlySpend,
-          miscSpend,
-          cardsDict
-        );
-      })
+      map(data => this.mapToUserSpending(data))
     );
   }
 
   updateMiscSpending(newMiscSpending: number): Observable<UserSpending> {
-    return this.http.patch<UserSpending>(this.baseUrl, {
-      misc_spending: newMiscSpending,
-    });
+    return this.http.patch<any>(this.baseUrl, {
+      misc_spending_ytd: newMiscSpending,
+    }).pipe(map(data => this.mapToUserSpending(data)));
   }
 
-  updateCardSpending(cards: Record<string, Card>): Observable<UserSpending> {
-    return this.http.patch<UserSpending>(
-      this.baseUrl, {
-      cards,
-    });
+  updateCardSpending(cards: Record<string, Card>, newTotalYtd: number): Observable<UserSpending> {
+    return this.http.patch<any>(this.baseUrl, {
+      cards: cards,
+      total_spending_ytd: newTotalYtd
+    }).pipe(map(data => this.mapToUserSpending(data)));
   }
 
   updateCardLimit(cards: Record<string, Card>): Observable<UserSpending> {
-    return this.http.patch<UserSpending>(
-      this.baseUrl, {
-      cards,
-    });
+    return this.http.patch<any>(this.baseUrl, {
+      cards: cards
+    }).pipe(map(data => this.mapToUserSpending(data)));
+  }
+
+  payCard(cards: Record<string, Card>): Observable<UserSpending> {
+    return this.http.patch<any>(this.baseUrl, {
+      cards: cards
+    }).pipe(map(data => this.mapToUserSpending(data)));
   }
 }
