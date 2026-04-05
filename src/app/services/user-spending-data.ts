@@ -50,9 +50,10 @@ export class UserSpendingDataService {
     );
   }
 
-  updateMiscSpending(newMiscSpending: number): Observable<UserSpending> {
+  updateMiscSpending(newMiscSpending: number, newTotalYtd: number): Observable<UserSpending> {
     return this.http.patch<any>(this.baseUrl, {
       misc_spending_ytd: newMiscSpending,
+      total_spending_ytd: newTotalYtd
     }).pipe(map(data => this.mapToUserSpending(data)));
   }
 

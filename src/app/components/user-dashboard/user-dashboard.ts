@@ -55,19 +55,17 @@ export class UserDashboardComponent implements OnInit {
       return;
     }
 
-    const updatedMiscSpending =
-      this.userSpending.misc_spend + miscUpdateDelta;
+    const updatedMiscSpending = this.userSpending.misc_spend + miscUpdateDelta;
+    const newTotalYtd = this.userSpending.spending_ytd + miscUpdateDelta;
 
-    this.userSpendingDataService.updateMiscSpending(updatedMiscSpending)
+    this.userSpendingDataService.updateMiscSpending(updatedMiscSpending, newTotalYtd)
       .subscribe({
         next: updatedValue => {
           this.userSpending = updatedValue;
           this.miscValueControl.reset();
         },
-        error: err => {
-          console.error('handleMiscSubmit failed', err);
-        }
-      })
+        error: err => console.error('handleMiscSubmit failed', err)
+      });
   }
 
   get miscSpendingDisplay(): number {
