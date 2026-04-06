@@ -5,6 +5,14 @@ import { UserSpending } from '../../models/user-spending';
 import { Card } from '../../models/card'
 import { UserSpendingDataService } from '../../services/user-spending-data';
 
+/**
+ * Dashboard component for displaying and managing user spending data.
+ * Handles misc spending, card spending, card limits, and card payments.
+ *
+ * Note: This component uses manual change detection via ChangeDetectorRef
+ * because HTTP observable callbacks run outside Angular's zone, meaning
+ * automatic change detection does not pick up state updates from service responses.
+ */
 @Component({
   selector: 'app-user-dashboard',
   standalone: true,
@@ -17,7 +25,11 @@ export class UserDashboardComponent implements OnInit {
   userSpending?: UserSpending;
   today: Date = new Date();
 
-  miscValueControl = new FormControl(null)
+  // Form control for the miscellaneous spending input field.
+  miscValueControl = new FormControl(null);
+
+  // Map of card key -> spending and limit form controls, one entry per card.
+  // Populated dynamically on init once card data is loaded from the service.
   cardControls: Record<string, { spending: FormControl; limit: FormControl }> = {};
 
   constructor(
@@ -27,6 +39,8 @@ export class UserDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.userSpendingDataService.getUserSpendingSummary().subscribe({
       next: data => {
+        // Initialize a pair of form controls for each card so the template
+        // can bind to them before the @for loop renders.
         Object.entries(data.cards).forEach(([key, card]) => {
           this.cardControls[key] = {
             spending: new FormControl(null),
@@ -43,13 +57,14 @@ export class UserDashboardComponent implements OnInit {
 
   handleMiscSpendCancel(): void {
     this.miscValueControl.reset();
-    return;
   }
 
   handleMiscSpendSubmit(): void {
     if (!this.userSpending) return;
 
     const miscUpdateDelta = Number(this.miscValueControl.value);
+
+    // Reject non-numeric input and reset the field.
     if (isNaN(miscUpdateDelta)) {
       this.miscValueControl.reset();
       return;
@@ -69,6 +84,10 @@ export class UserDashboardComponent implements OnInit {
       });
   }
 
+  /**
+   * Returns the live misc spending preview, incorporating any value
+   * currently typed in the input field before the user submits.
+   */
   get miscSpendingDisplay(): number {
     if (!this.userSpending) return 0;
 
@@ -76,6 +95,11 @@ export class UserDashboardComponent implements OnInit {
     return this.userSpending.misc_spend + miscDelta;
   }
 
+  /**
+   * Returns the list of cards as an array for template iteration.
+   * Cards are stored as a keyed Record on userSpending to allow O(1)
+   * lookup by key, but the template needs an array for @for.
+   */
   get cardList(): Card[] {
     return Object.values(this.userSpending?.cards ?? {});
   }
@@ -83,18 +107,20 @@ export class UserDashboardComponent implements OnInit {
   handleCardCancel(card: Card): void {
     this.cardControls[card.key].spending.reset();
     this.cardControls[card.key].limit.reset();
-    return;
   }
 
   handleCardSpendSubmit(card: Card): void {
     if (!this.userSpending) return;
 
     const spendDelta = Number(this.cardControls[card.key].spending.value);
+
+    // Reject non-numeric input and reset the field.
     if (isNaN(spendDelta)) {
       this.cardControls[card.key].spending.reset();
       return;
     }
 
+    // Apply the delta on top of the current card spending.
     const updatedCards: Record<string, Card> = {
       ...this.userSpending.cards,
       [card.key]: {
@@ -117,6 +143,10 @@ export class UserDashboardComponent implements OnInit {
       });
   }
 
+  /**
+   * Returns the live card spending preview for a given card, incorporating
+   * any value currently typed in the spending input field before submission.
+   */
   cardSpendingDisplay(card: Card): number {
     if (!this.userSpending) return 0;
 
@@ -128,11 +158,14 @@ export class UserDashboardComponent implements OnInit {
     if (!this.userSpending) return;
 
     const limitDelta = Number(this.cardControls[card.key].limit.value);
+
+    // Reject non-numeric input and reset the field.
     if (isNaN(limitDelta)) {
       this.cardControls[card.key].limit.reset();
       return;
     }
 
+    // Apply the delta on top of the current card limit.
     const updatedCards: Record<string, Card> = {
       ...this.userSpending.cards,
       [card.key]: {
@@ -153,6 +186,10 @@ export class UserDashboardComponent implements OnInit {
       });
   }
 
+  /**
+   * Returns the live card limit preview for a given card, incorporating
+   * any value currently typed in the limit input field before submission.
+   */
   cardLimitDisplay(card: Card): number {
     if (!this.userSpending) return 0;
 
@@ -160,6 +197,7 @@ export class UserDashboardComponent implements OnInit {
     return card.limit + cardLimitDelta;
   }
 
+  /** Resets a card's spending to 0, simulating a full payment. */
   handleCardPaid(card: Card): void {
     if (!this.userSpending) return;
 
