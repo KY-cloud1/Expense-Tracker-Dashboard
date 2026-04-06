@@ -35,7 +35,7 @@ export class UserDashboardComponent implements OnInit {
         });
 
         this.userSpending = data;
-        this.cdr.detectChanges();  // Force template to update.
+        this.cdr.detectChanges();
       },
       error: err => console.error('Error user-dashboard component init:', err)
     });
@@ -63,6 +63,7 @@ export class UserDashboardComponent implements OnInit {
         next: updatedValue => {
           this.userSpending = updatedValue;
           this.miscValueControl.reset();
+          this.cdr.detectChanges();
         },
         error: err => console.error('handleMiscSubmit failed', err)
       });
@@ -110,6 +111,7 @@ export class UserDashboardComponent implements OnInit {
         next: updatedValue => {
           this.userSpending = updatedValue;
           this.cardControls[card.key].spending.reset();
+          this.cdr.detectChanges();
         },
         error: err => console.error(err)
       });
@@ -145,6 +147,7 @@ export class UserDashboardComponent implements OnInit {
         next: updatedValue => {
           this.userSpending = updatedValue;
           this.cardControls[card.key].limit.reset();
+          this.cdr.detectChanges();
         },
         error: err => console.error(err)
       });
@@ -174,6 +177,7 @@ export class UserDashboardComponent implements OnInit {
         next: updatedValue => {
           this.userSpending = updatedValue;
           this.cardControls[card.key].spending.reset();
+          this.cdr.detectChanges();
         },
         error: err => console.error(err)
       });
